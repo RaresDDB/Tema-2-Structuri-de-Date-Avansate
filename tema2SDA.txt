@@ -1,0 +1,210 @@
+Tema 2 SDA - Parlea Rares
+
+ex1:https://www.infoarena.ro/problema/trie - 40 puncte
+
+Cod:
+
+#include <fstream>
+#include <unordered_map>
+#include <iostream>
+
+struct TrieNode {
+    std::unordered_map<char, TrieNode*> children;
+    int ending_words;
+    int passing_through;
+
+    explicit TrieNode(int occurrences = 0, int passing_through = 0) :
+        ending_words(occurrences),
+        passing_through(passing_through) {}
+};
+
+class Trie {
+private:
+    TrieNode* root = new TrieNode();
+
+public:
+    void insert (const std::string &word) {
+        auto current_node = root;
+
+        for (auto letter : word) {
+            if (!current_node->children.count(letter)) {
+                current_node->children[letter] = new TrieNode();
+            }
+
+            ++current_node->passing_through;
+            current_node = current_node->children[letter];
+        }
+
+        ++current_node->passing_through;
+        ++current_node->ending_words;
+    }
+
+    int get_longest_common_prefix (const std::string &word) const {
+        int common_prefix_length = 0;
+        auto current_node = root;
+        auto letter = word.begin();
+
+        while (current_node->children.count(*letter)) {
+            ++common_prefix_length;
+            current_node = current_node->children[*letter];
+            ++letter;
+        }
+
+        return common_prefix_length;
+    }
+
+    int get_occurrences (const std::string &word) const {
+        auto current_node = root;
+
+        for (auto letter : word) {
+            if (!current_node->children.count(letter)) return 0;
+            current_node = current_node->children[letter];
+        }
+
+        return current_node->ending_words;
+    }
+
+    void remove (const std::string &word) {
+        auto current_node = root;
+        auto letter = word.begin();
+
+        while (letter != word.end()) {
+            --current_node->passing_through;
+
+            auto previous_node = current_node;
+            current_node = current_node->children[*(letter++)];
+
+            if (current_node->passing_through == 1) {
+                previous_node->children.erase(*(letter - 1));
+                previous_node = current_node;
+            }
+
+            if (previous_node->passing_through == 0) {
+                delete previous_node;
+            }
+        }
+
+        --current_node->passing_through;
+        --current_node->ending_words;
+
+        if (current_node->passing_through == 0) {
+            delete current_node;
+        }
+    }
+};
+
+int main() {
+    std::ifstream fin("trie.in");
+    std::ofstream fout("trie.out");
+
+    Trie trie;
+    int operation;
+
+    while (fin >> operation) {
+        std::string word;
+        fin >> word;
+
+        switch (operation) {
+            case 0:
+                trie.insert(word);
+                break;
+            case 1:
+                trie.remove(word);
+                break;
+            case 2:
+                fout << trie.get_occurrences(word) << '\n';
+                break;
+            case 3:
+                fout << trie.get_longest_common_prefix(word) << '\n';
+                break;
+        }
+    }
+
+    return 0;
+}
+
+Problema se rezuma la a folosi structura de date trie in care stocam aparitia fiecarui cuvant.
+In clasa Trie am definit 4 operatii care ne ajuta la rezolvarea problemei:insert(inserarea unui
+cuvant in Trie),remove(stergerea unui cuvant din Trie),get_longest_common_prefix(intoarce lungimea
+celui mai lung prefix al unui cuvant cu oricare cuvant din Trie)si get_occurences(intoarce nr.
+de aparitii al unui cuvant in Trie).Am folosit structura Trie,deoarece este eficienta pentru
+stocarea si cautarea de cuvinte.Complexitatea timpului pentru fiecare operatie este O(lungimea
+cuvantului),ceea ce este eficient,deoarece cuvintele au lungime mica in acest caz.
+
+
+ex2:https://www.infoarena.ro/problema/eqs - 20 puncte
+
+Cod:
+
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
+
+using namespace std;
+
+ifstream f("eqs.in");
+ofstream g("eqs.out");
+
+int a1, a2, a3, a4, a5, eq1, eq2;
+int x1 = -50, x2, x3 = -50, x4, x5;
+int result;
+
+unordered_map<int, int> fr;
+
+int putere(int x){
+    return x*x*x;
+}
+
+int main() {
+
+    f >> a1 >> a2 >> a3 >> a4 >> a5;
+    while(x1 <= 50)
+    {
+        x2 = -50;
+        while(x2 <= 50){
+            if(x1 != 0  && x2 != 0)
+            {
+                eq1 = a1*putere(x1) + a2*putere(x2);
+                fr[eq1] ++;
+            }
+            x2++;
+        }
+        x1++;
+    }
+
+    while(x3 <= 50)
+    {
+        x4 = -50;
+        while(x4 <= 50)
+        {
+            x5 = -50;
+            while(x5 <= 50)
+            {
+                if(x3 != 0 && x4 != 0 && x5 != 0)
+                {
+                    eq2 = -(a3*putere(x3) + a4*putere(x4) + a5*putere(x5));
+
+                    if(fr.find(eq2) != fr.end()) /// daca eq2 exista in unordored_map
+                        result += fr[-eq2];
+
+                }
+                x5++;
+            }
+            x4++;
+        }
+        x3++;
+    }
+
+    g << result;
+
+    return 0;
+}
+
+Pentru rezolvarea acestei probleme am initializat x1 si x3 cu -50 pentru a explora intervalul 
+[-50,50] si a determina toate solutiile problemei.Am folosit"fr" pentru a stoca frecventele 
+ecuatiilor calculate.In cele 2 while-uri am luat toate posibilitatile de valori din intervalul
+cerut si am calculat frecventa fiecarui rezultat.Eq2 calculat reprezinta opusul lui eq1,iar daca
+eq2 este gasit in vectorul de frecventa inseamna ca am gasit un numar de solutii,suma lor fiind 0.
+Complexitatea algoritmului este 0(n^3),iar n=101 in acest caz.În general, pentru această problemă
+specifică, abordarea tradițională de forță brută sau backtracking este mai potrivită și mai simplă
+de implementat.
